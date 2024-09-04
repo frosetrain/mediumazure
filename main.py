@@ -5,6 +5,7 @@ from pybricks.parameters import Color, Direction, Port, Stop
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
 from pybricks.tools import StopWatch, wait
+from ustruct import pack_into
 
 FAST_SPEED = 250
 SLOW_SPEED = 150
@@ -32,8 +33,8 @@ def linetrack(junction_type: str, start: int, stretch: int, *, move_forward: boo
         junction_type (str): Left, both, right or green.
         start (str): How far to drive before going quickly.
         stretch (int): How far to drive before slowing down and enabling detection.
-        move_forward (bool): Whether to go forward to get axle on the line.
-        linetrack (bool): Whether to linetrack.
+        move_forward (bool): Whether to go forward to get axle on the line. Defaults to True.
+        linetrack (bool): Whether to linetrack. Defaults to True.
     """
     slow = True
     db.reset()
@@ -107,6 +108,7 @@ def detect() -> list[bool]:
         averages[i] = total / tally
 
     print(averages)
+    store_averages(averages)
     sorted_averages = sorted(enumerate(averages), key=lambda x: x[1], reverse=True)
     park_elements = [False] * 6
     for a in sorted_averages[0:2]:
@@ -130,6 +132,18 @@ def triple(park_elements: list[bool]) -> int:
                 return 3
             else:
                 return i
+
+
+def store_averages(averages: list[int]) -> None:
+    """Store the average s+v values in the hub's persistent storage.
+
+    Args:
+        averages (list[int]): An array of average values.
+    """
+    buf = bytearray(6 * 2)  # 2 bytes for each unsigned short
+    for i, val in enumerate(averages):
+        pack_into("H", buf, i * 2, int(val))
+    hub.system.storage(0, write=buf)
 
 
 def cage_up(*, blocking: bool) -> None:
@@ -267,9 +281,9 @@ def main() -> None:
     db.straight(242.675)
     db.curve(215.825, 90)
     db.straight(-420)
-    linetrack("both", 100, 500, move_forward=True, linetrack=False)
+    linetrack("both", 100, 500, linetrack=False)
     db.turn(90)
-    linetrack("green", 100, 1100, move_forward=True)
+    linetrack("green", 100, 1100)
 
 
 if __name__ == "__main__":
