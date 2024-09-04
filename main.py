@@ -281,9 +281,6 @@ def main() -> None:
     db.straight(242.675)
     db.curve(215.825, 90)
     db.straight(-420)
-    linetrack("both", 100, 500, linetrack=False)
-    db.turn(90)
-    linetrack("green", 100, 1100)
 
 
 if __name__ == "__main__":
