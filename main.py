@@ -60,7 +60,7 @@ def linetrack(
             hit = left_color_sensor.color() == Color.GREEN and right_color_sensor.color() == Color.GREEN
         if hit and db.distance() >= stretch:
             if move_forward:
-                db.straight(LIGHT_SENSOR_X + 6, then=Stop.BRAKE)
+                db.straight(LIGHT_SENSOR_X + 2, then=Stop.BRAKE)
             else:
                 db.brake()
             break
@@ -250,7 +250,7 @@ def main() -> None:
     # STARTING POINT 2
     if starting_point <= 2:
         # Collect first triple
-        simple_linetrack((4 - first_triple) * (31.9 + 52.15) + 52.15)
+        simple_linetrack((4 - first_triple) * (31.9 + 52.15) + 55.95)
         cage_up(blocking=False)
         db.turn(-90)
         db.straight(136)
