@@ -271,7 +271,7 @@ def main() -> None:
     if starting_point <= 3:
         # Collect second triple
         if first_triple == 3:
-            simple_linetrack(4 * (31.9 + 52.15) + 52.15)
+            simple_linetrack(4 * (31.9 + 52.15) + 55.95)
             cage_up(blocking=False)
             db.turn(-90)
             db.straight(136)
@@ -279,7 +279,7 @@ def main() -> None:
             db.straight(-136)
             db.turn(90)
         else:
-            simple_linetrack(1 * (31.9 + 52.15) + 52.15)
+            simple_linetrack(1 * (31.9 + 52.15) + 55.95)
             cage_up(blocking=False)
             db.turn(-90)
             db.straight(136)
