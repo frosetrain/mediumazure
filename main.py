@@ -83,7 +83,7 @@ def simple_linetrack(dist: int) -> None:
         left_reflection = left_color_sensor.reflection()
         right_reflection = right_color_sensor.reflection()
         difference = left_reflection - right_reflection
-        db.drive(fast_speed, difference * 0.25)
+        db.drive(slow_speed, difference * 0.25)
         if db.distance() >= dist:
             break
     db.brake()
@@ -165,7 +165,7 @@ def cage_up(*, blocking: bool) -> None:
     Args:
         blocking (bool): Whether to block while moving the cage.
     """
-    cage_motor.run_target(108, 150, wait=blocking)
+    cage_motor.run_target(100, 148, wait=blocking)
 
 
 def cage_down(*, blocking: bool) -> None:
@@ -174,7 +174,7 @@ def cage_down(*, blocking: bool) -> None:
     Args:
         blocking (bool): Whether to block while moving the cage.
     """
-    cage_motor.run_target(110, 52, wait=blocking)
+    cage_motor.run_target(100, 52, wait=blocking)
 
 
 def setup() -> None:
@@ -237,8 +237,8 @@ def main() -> None:
         db.straight(-260)
         db.turn(100)
         # Second apartment
-        db.straight(260)
-        db.straight(-260)
+        db.straight(270)
+        db.straight(-270)
         db.turn(-140)
         # House
         db.straight(100)
@@ -278,8 +278,8 @@ def main() -> None:
         linetrack("both", 100, 400)
         db.turn(90)
         cage_up(blocking=False)
-        db.straight(136)
-        db.straight(-136)
+        db.straight(142)
+        db.straight(-142)
         cage_down(blocking=False)
         db.turn(90)
         linetrack("right", 100, 580)
@@ -334,6 +334,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Test claw
     # while True:
     # cage_up(blocking=True)
     # hub.speaker.beep()
@@ -341,10 +342,16 @@ if __name__ == "__main__":
     # cage_down(blocking=True)
     # hub.speaker.beep()
     # wait(100)
-    fast_speed = 300
+
+    # Test jerk
+    # db.settings(straight_speed=425, straight_acceleration=2000)
+    # db.straight(300, then=Stop.BRAKE)
+    # db.straight(-100)
+
+    fast_speed = 250
     slow_speed = 150
-    turn_rate = 240
-    db.settings(fast_speed, fast_speed * 3, turn_rate, turn_rate * 4)
+    turn_rate = 200
+    db.settings(fast_speed, fast_speed * 4, turn_rate, turn_rate * 4)
     starting_point = 0
     # setup()
     main()
