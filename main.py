@@ -1,7 +1,7 @@
 """Medium Azure, RMJ24_292_01."""
 
 from pybricks.hubs import PrimeHub
-from pybricks.parameters import Button, Color, Direction, Port, Stop
+from pybricks.parameters import Color, Direction, Port, Stop
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
 from pybricks.tools import StopWatch, hub_menu, wait
@@ -10,6 +10,7 @@ from ustruct import pack_into
 BLACK_THRESHOLD = 25
 WHITE_THRESHOLD = 60
 LIGHT_SENSOR_X = 128
+GRAB_FORWARD = 132
 
 hub = PrimeHub()
 left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
@@ -114,29 +115,36 @@ def detect() -> list[bool]:
     print(averages)
     store_averages(averages)
     sorted_averages = sorted(enumerate(averages), key=lambda x: x[1], reverse=True)
-    park_elements = [False] * 6
-    for a in sorted_averages[0:2]:
-        park_elements[a[0]] = True
+    print(sorted_averages)
+    park_elements = [1] * 6
+    park_elements[sorted_averages[0][0]] = 2
+    park_elements[sorted_averages[-1][0]] = 0
+    print(park_elements)
     return park_elements
 
 
-def triple(park_elements: list[bool]) -> int:
-    """Calculate where the first set of 3 park elements is.
+def calculate_grabs(park_elements: list[bool]) -> tuple[list[int], list[int]]:
+    """Calculate where the grabs are.
 
     Args:
-        park_elements (list[bool]): The park element slots. True means it is a lake element.
+        park_elements (tuple[list[int], list[int]]): The park element slots. True means it is a lake element.
 
     Raises:
-        ValueError: No triplets were found.
+        ValueError: Something weird happened.
     """
-    for i in range(4):
+    park_elements.append(park_elements[0])
+    park_elements.append(park_elements[1])
+    for i in range(6):
         subset = park_elements[i : i + 3]
-        if sum(subset) == 1:
-            if i == 0:
-                return 3
-            return i
-    error_message = "No triplets were found."
-    raise ValueError(error_message)
+        if sum(subset) == 4:
+            if i == 4:  # wrapped around
+                return ([5, -1], [(i - 2) % 6])
+            elif i == 5:
+                return ([6, 0], [(i - 2) % 6])
+            elif i in (1, 2):
+                return ([i + 1], [1, 4])
+            else:
+                return ([i + 1], [(i - 2) % 6])
 
 
 def store_averages(averages: list[int]) -> None:
@@ -157,8 +165,7 @@ def cage_up(*, blocking: bool) -> None:
     Args:
         blocking (bool): Whether to block while moving the cage.
     """
-    cage_motor.run_time(500, 0.3)
-    cage_motor.run_target(96, 142, wait=blocking)
+    cage_motor.run_target(108, 150, wait=blocking)
 
 
 def cage_down(*, blocking: bool) -> None:
@@ -167,27 +174,28 @@ def cage_down(*, blocking: bool) -> None:
     Args:
         blocking (bool): Whether to block while moving the cage.
     """
-    cage_motor.run_target(96, 52, wait=blocking)
+    cage_motor.run_target(110, 52, wait=blocking)
 
 
 def setup() -> None:
     """Read button presses to set the drivebase settings and breakpoint."""
     global fast_speed, slow_speed, starting_point
+    hub.speaker.volume(50)
     # Set speed
-    speed_levels = [250, 300, 350, 400, 420]  # TODO: check using db.settings()
+    speed_levels = [200, 250, 300, 350, 420]
     selected_speed_level = hub_menu(*range(5))
     fast_speed = speed_levels[selected_speed_level]
     slow_speed = fast_speed / 2
-    hub.speaker.play_notes(["C4/4"])
+    hub.speaker.play_notes(["C4/8"])
     # Set turn rate
-    turnrate_levels = [120, 180, 240, 300, 360]  # TODO: check using db.settings()
+    turnrate_levels = [120, 180, 240, 300, 360]
     selected_turnrate_level = hub_menu(*range(5))
     turn_rate = turnrate_levels[selected_turnrate_level]
-    hub.speaker.play_notes(["D4/4"])
-    db.settings(fast_speed, fast_speed * 4, turn_rate, turn_rate * 3)
+    hub.speaker.play_notes(["D4/8"])
+    db.settings(fast_speed, fast_speed * 4, turn_rate, turn_rate * 4)
     # Set starting point
     starting_point = hub_menu(*range(5))
-    hub.speaker.play_notes(["E4/4"])
+    hub.speaker.play_notes(["E4/8"])
     wait(1000)
 
 
@@ -199,7 +207,7 @@ def main() -> None:
         # Collect starter kits
         db.curve(80, 69)
         db.curve(80, -69)
-        simple_linetrack(271)
+        simple_linetrack(267)
         cage_up(blocking=True)
         db.turn(90)
         db.straight(-132)
@@ -211,8 +219,8 @@ def main() -> None:
         db.straight(100)
         # Detect park elements
         detected = detect()
-        first_triple = triple(detected)
-        print(detected, first_triple)
+        first_grabs, second_grabs = calculate_grabs(detected)
+        print(detected, first_grabs, second_grabs)
         db.curve(60, -90)
         linetrack("both", 10, 10, move_forward=False)
 
@@ -241,27 +249,36 @@ def main() -> None:
         db.straight(-144)
         db.turn(90)
         simple_linetrack(350)
-        db.turn(-150)
-        db.straight(275)
-        db.straight(-275)
-        db.turn(-30)
+        db.turn(-145)
+        db.straight(282)
+        db.straight(-282)
+        db.turn(-35)
         linetrack("right", 10, 10)
 
     # STARTING POINT 2
     if starting_point <= 2:
-        # Collect first triple
-        simple_linetrack((4 - first_triple) * (31.9 + 52.15) + 55.95)
+        # Collect first grabs
+        simple_linetrack((5 - min(first_grabs)) * (31.9 + 52.15) + 55.95)
         cage_up(blocking=False)
         db.turn(-90)
-        db.straight(136)
+        db.straight(GRAB_FORWARD)
         cage_down(blocking=True)
-        db.straight(-136)
+        db.straight(-GRAB_FORWARD)
         db.turn(-90)
+        if len(first_grabs) == 2:
+            simple_linetrack((max(first_grabs) - min(first_grabs)) * (31.9 + 52.15))
+            cage_up(blocking=False)
+            db.turn(90)
+            db.straight(GRAB_FORWARD)
+            cage_down(blocking=True)
+            db.straight(-GRAB_FORWARD)
+            db.turn(-90)
+
         # Head to South Park
-        linetrack("both", 100, 600)
+        linetrack("both", 100, 400)
         db.turn(90)
+        cage_up(blocking=False)
         db.straight(136)
-        cage_up(blocking=True)
         db.straight(-136)
         cage_down(blocking=False)
         db.turn(90)
@@ -269,29 +286,21 @@ def main() -> None:
 
     # STARTING POINT 3
     if starting_point <= 3:
-        # Collect second triple
-        if first_triple == 3:
-            simple_linetrack(4 * (31.9 + 52.15) + 55.95)
+        # Collect second grabs
+        simple_linetrack((5 - max(second_grabs)) * (31.9 + 52.15) + 55.95)
+        cage_up(blocking=False)
+        db.turn(-90)
+        db.straight(GRAB_FORWARD)
+        cage_down(blocking=True)
+        db.straight(-GRAB_FORWARD)
+        db.turn(90)
+        if len(second_grabs) == 2:
+            simple_linetrack((min(second_grabs) - max(second_grabs)) * (31.9 + 52.15))
             cage_up(blocking=False)
             db.turn(-90)
-            db.straight(136)
+            db.straight(GRAB_FORWARD)
             cage_down(blocking=True)
-            db.straight(-136)
-            db.turn(90)
-        else:
-            simple_linetrack(1 * (31.9 + 52.15) + 55.95)
-            cage_up(blocking=False)
-            db.turn(-90)
-            db.straight(136)
-            cage_down(blocking=True)
-            db.straight(-136)
-            db.turn(90)
-            simple_linetrack(3 * (31.9 + 52.15))
-            db.turn(-90)
-            cage_up(blocking=True)
-            db.straight(136)
-            cage_down(blocking=True)
-            db.straight(-136)
+            db.straight(-GRAB_FORWARD)
             db.turn(90)
         # Head to North Park
         linetrack("green", 30, 120, move_forward=False)
@@ -301,22 +310,41 @@ def main() -> None:
         db.turn(90)
         db.straight(853.2)
         db.turn(-90)
+        cage_up(blocking=False)
         db.straight(160)
+        db.straight(-164)
+        db.turn(-90)
+        db.straight(457)
+        db.turn(90)
+        db.straight(150)
+        cage_down(blocking=True)
+        db.straight(-150)
+        db.turn(90)
+        db.straight(457)
+        db.turn(-90)
         cage_up(blocking=True)
+        db.straight(160)
         db.straight(-160)
+        db.turn(90)
         cage_down(blocking=False)
         # Head to e-bikes
-        db.turn(90)
         db.straight(242.675)
         db.curve(215.825, 90)
         db.straight(-420)
 
 
 if __name__ == "__main__":
-    # fast_speed = 250
-    # slow_speed = 150
-    # turn_rate = 250
-    # db.settings(fast_speed, fast_speed * 4, turn_rate, turn_rate * 3)
-    # starting_point = 0
-    setup()
+    # while True:
+    # cage_up(blocking=True)
+    # hub.speaker.beep()
+    # wait(1000)
+    # cage_down(blocking=True)
+    # hub.speaker.beep()
+    # wait(100)
+    fast_speed = 300
+    slow_speed = 150
+    turn_rate = 240
+    db.settings(fast_speed, fast_speed * 3, turn_rate, turn_rate * 4)
+    starting_point = 0
+    # setup()
     main()

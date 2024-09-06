@@ -1,0 +1,23 @@
+0 nothing
+1 green
+2 blue
+
+LOOP AROUND
+2 0 1 1 1 1
+1 2 0 1 1 1
+2 1 0 1 1 1
+0 1 2 1 1 1
+0 2 1 1 1 1
+1 0 1 1 1 2
+0 1 1 2 0 0
+1 1 1 0 1 2
+
+"""
+check sum of 4
+yes then grab it
+else
+is ther a blank 0 next to blue 2 yes then
+    if 2 is at 0 or 5
+        grab
+    else
+"""
